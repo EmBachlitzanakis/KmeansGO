@@ -73,3 +73,6 @@ In this implementation, the algorithm is repeated 15 times, and the centroids wi
 ### Sum of Squared Errors (SSE)
 
 The Sum of Squared Errors (SSE) is used to evaluate the quality of clusters. It measures how close the points in a cluster are to their centroid. A lower SSE means a better clustering result.
+
+![image](https://github.com/user-attachments/assets/c3a49dcf-0a11-44d6-82d0-76bb5b3a5086)
+
