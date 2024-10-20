@@ -2,6 +2,8 @@
 
 This repository contains an implementation of the KMeans clustering algorithm in Go. The program generates random 2D points, clusters them into a specified number of groups, and finds optimal centroids by minimizing the Sum of Squared Errors (SSE).
 
+The Euclidean distance between points is calculated using a function written in Go assembly. This implementation theoretically optimizes performance by directly using low-level assembly instructions, which reduces the overhead associated with function calls and general-purpose mathematical operations.
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -11,6 +13,7 @@ This repository contains an implementation of the KMeans clustering algorithm in
   - [Running the Program](#running-the-program)
   - [Example Output](#example-output)
 - [KMeans Algorithm](#kmeans-algorithm)
+- [Assembly Implementation](#assembly-implementation)
 
 ## Overview
 
@@ -75,4 +78,60 @@ In this implementation, the algorithm is repeated 15 times, and the centroids wi
 The Sum of Squared Errors (SSE) is used to evaluate the quality of clusters. It measures how close the points in a cluster are to their centroid. A lower SSE means a better clustering result.
 
 ![image](https://github.com/user-attachments/assets/c3a49dcf-0a11-44d6-82d0-76bb5b3a5086)
+
+# Euclidean Distance Implementation
+
+## Assembly Implementation
+
+
+```assembly
+TEXT ·EucliDistance(SB), $0
+    // Load input points (x and y)
+    MOVSD x+0(FP), X0          // Load x[0]
+    MOVSD x+8(FP), X1          // Load x[1]
+    MOVSD y+16(FP), X2         // Load y[0]
+    MOVSD y+24(FP), X3         // Load y[1]
+
+    // Subtract corresponding coordinates
+    SUBSD X2, X0               // x[0] - y[0]
+    SUBSD X3, X1               // x[1] - y[1]
+
+    // Square the differences
+    MULSD X0, X0               // (x[0] - y[0])^2
+    MULSD X1, X1               // (x[1] - y[1])^2
+
+    // Add the squares
+    ADDSD X1, X0               // (x[0] - y[0])^2 + (x[1] - y[1])^2
+
+    // Compute the square root
+    SQRTSD X0, X0              // sqrt((x[0] - y[0])^2 + (x[1] - y[1])^2)
+
+    // Return the result
+    MOVSD X0, ret+32(FP)
+    RET
+```
+
+The assembly version of the Euclidean distance calculation manually handles each step:
+
+- **Loading Values**: Loads the values into registers (X0, X1, X2, X3).
+- **Mathematical Operations**: Performs subtraction, squares the differences, adds them, and finally computes the square root.
+- **SSE Instructions**: Utilizes SSE (Streaming SIMD Extensions) instructions (`MOVSD`, `SUBSD`, `MULSD`, `ADDSD`, `SQRTSD`), which are hardware-level floating-point operations that are highly optimized on modern processors.
+
+## Comparison: Why Assembly is Likely Faster
+
+1. **Function Overhead**: The Go version includes calls to `math.Pow` and `math.Sqrt`, which adds overhead due to function calls. In contrast, the assembly version uses low-level instructions directly.
+   
+2. **Efficiency**: In the assembly code, each mathematical operation is performed using specialized CPU instructions (`MULSD`, `ADDSD`, `SQRTSD`), which are extremely fast. The Go implementation relies on general-purpose math functions that aren't as optimized for the specific case of squaring and square rooting.
+
+3. **Avoiding Unnecessary Generality**: The Go version uses `math.Pow` to square the differences, but the assembly version directly multiplies the values, avoiding the overhead associated with the more general `math.Pow` function.
+
+## Benchmarking to Confirm
+
+While we can theoretically assert that the assembly version is more efficient, the only way to definitively prove which one is faster is to benchmark both implementations.
+There is the calculations_test.go file inside the Calculations folder
+
+cd Calculations
+go test -bench=.
+
+so you can see the results by yourself.
 
